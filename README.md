@@ -101,10 +101,6 @@ You can customize the notification system in the `config.lua` file.
 
 - `/entityinfo` - Toggle entity info display (can be changed in config)
 
-## Credits
-
-Developed by [Blaze Scripts](https://store.blazescripts.dev/)
-
 ## License
 
-This resource is protected by copyright. Unauthorized distribution, modification, or commercial use is prohibited.
+This resource is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
