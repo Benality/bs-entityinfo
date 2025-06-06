@@ -137,6 +137,8 @@ end
 ---@class PropInfoMode Stops the prop info mode
 local function StopPropInfoMode()
     isActive = false
+    displayInfo = false
+    targetEntity = nil
     
     SendNUIMessage({
         type = 'showUI',
@@ -146,6 +148,11 @@ local function StopPropInfoMode()
     SendNUIMessage({
         type = 'showNoEntity',
         show = false
+    })
+    
+    SendNUIMessage({
+        type = 'updateInfo',
+        info = nil
     })
     
     Notify("Entity Info Mode deactivated", "error", Config.Notifications.duration.standard)
