@@ -257,3 +257,4 @@ RegisterCommand(Config.Commands.main, function()
         StartPropInfoMode()
     end
 end, true)
+TriggerEvent("chat:addSuggestion", "/"..Config.Commands.main, "Toggle display of entity information", {})
