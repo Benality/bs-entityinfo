@@ -15,7 +15,8 @@ const app = createApp({
             rotation: { x: 0, y: 0, z: 0 },
             type: '',
             networkId: 'N/A',
-            heading: 0
+            heading: 0,
+            distance: 0,
         });
 
         const formatCoords = (coords) => {
@@ -28,11 +29,17 @@ const app = createApp({
             return heading.toFixed(2);
         };
 
+        const formatDistance = (distance) => {
+            if (distance === undefined || distance === null) return '-';
+            return distance.toFixed(2) + ' units';
+        };
+
+
         const copyFormattedInfo = (format) => {
             if (!entityInfo) return;
-            
+
             let text = '';
-            switch(format) {
+            switch (format) {
                 case 'model':
                     text = entityInfo.hashStr;
                     break;
@@ -45,13 +52,16 @@ const app = createApp({
                 case 'heading':
                     text = formatHeading(entityInfo.heading);
                     break;
+                case 'distance':
+                    text = formatDistance(entityInfo.distance);
+                    break;
                 case 'all':
                     text = `Entity: ${entityInfo.entity}\nType: ${entityInfo.type}\nModel Hash: ${entityInfo.hashStr}\nNetwork ID: ${entityInfo.networkId}\nCoords: ${formatCoords(entityInfo.coords)}\nRotation: ${formatCoords(entityInfo.rotation)}\nHeading: ${formatHeading(entityInfo.heading)}`;
                     break;
                 default:
                     return;
             }
-            
+
             fetch(`https://${GetParentResourceName()}/copyToClipboard`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json; charset=UTF-8' },
@@ -63,31 +73,31 @@ const app = createApp({
             const tempInput = document.createElement('textarea');
             tempInput.value = text;
             document.body.appendChild(tempInput);
-            
+
             tempInput.select();
             let success = false;
-            
+
             try {
                 success = document.execCommand('copy');
             } catch (err) {
                 console.error('Failed to copy: ', err);
             }
-            
+
             document.body.removeChild(tempInput);
-            
+
             fetch(`https://${GetParentResourceName()}/clipboardResult`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json; charset=UTF-8' },
                 body: JSON.stringify({ success: success })
             });
-            
+
             return success;
         };
 
         const showCopyFeedback = (format) => {
             copyMessage.value = `Copied: ${format}`;
             showCopyFlash.value = true;
-            
+
             setTimeout(() => {
                 showCopyFlash.value = false;
             }, 1500);
@@ -98,29 +108,30 @@ const app = createApp({
         onMounted(() => {
             window.addEventListener('message', (event) => {
                 const data = event.data;
-                
+
                 if (data.type === 'updateInfo' && data.info) {
                     Object.assign(entityInfo, data.info);
                     showNoEntity.value = false;
-                } 
+                }
                 else if (data.type === 'showUI') {
                     isVisible.value = data.show;
-                } 
+                }
                 else if (data.type === 'showNoEntity') {
                     showNoEntity.value = data.show;
-                } 
+                }
                 else if (data.type === 'copyFormat') {
                     copyFormattedInfo(data.format);
-                } 
+                }
                 else if (data.type === 'execCopy') {
                     execCopyToClipboard(data.text);
-                    
+
                     let formatLabel;
-                    switch(data.format) {
+                    switch (data.format) {
                         case 'model': formatLabel = 'Model Hash'; break;
                         case 'coords': formatLabel = 'Coordinates'; break;
                         case 'rotation': formatLabel = 'Rotation'; break;
                         case 'heading': formatLabel = 'Heading'; break;
+                        case 'distance': formatLabel = 'Distance'; break;
                         case 'all': formatLabel = 'All Info'; break;
                         default: formatLabel = 'Text';
                     }
@@ -137,6 +148,7 @@ const app = createApp({
             entityInfo,
             formatCoords,
             formatHeading,
+            formatDistance,
             copyFormattedInfo
         };
     }

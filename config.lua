@@ -7,21 +7,21 @@ Config.Commands = {
 
 -- Key bindings
 Config.Keys = {
-    toggle = 0xD9D0E1C0,     -- Space key
-    copyModel = 0x760A9C6F,   -- G key
-    copyCoords = 0xCEFD9220,  -- E key
+    toggle = 0xD9D0E1C0,       -- Space key
+    copyModel = 0x760A9C6F,    -- G key
+    copyCoords = 0xCEFD9220,   -- E key
     copyRotation = 0xE30CD707, -- R key
-    copyHeading = 0xF3830D8E, -- J key
-    copyAll = 0x26E9DC00,     -- Z key
+    copyHeading = 0xF3830D8E,  -- J key
+    copyAll = 0x26E9DC00,      -- Z key
 }
 
 -- Raycast settings
 Config.Raycast = {
-    maxDistance = 25.0,
+    maxDistance = 50,
     drawLine = true,
-    lineColor = {255, 0, 0, 180}, -- RGBA
+    lineColor = { 255, 0, 0, 180 },   -- RGBA
     drawMarker = true,
-    markerColor = {255, 0, 0, 255}, -- RGBA
+    markerColor = { 255, 0, 0, 255 }, -- RGBA
     markerSize = 0.03
 }
 
@@ -50,7 +50,7 @@ function Notify(message, type, duration)
         })
         return
     end
-    
+
     -- VORP
     if GetResourceState('vorp_core') ~= 'missing' then
         TriggerEvent('vorp:TipBottom', message, duration)

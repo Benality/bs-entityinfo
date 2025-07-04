@@ -14,24 +14,29 @@ end
 ---@return table|nil Entity information or nil if entity doesn't exist
 local function GetEntityInfo(entity)
     if not DoesEntityExist(entity) then return nil end
-    
+
     local coords = GetEntityCoords(entity)
     local rotation = GetEntityRotation(entity, 2)
     local heading = GetEntityHeading(entity)
     local hash = GetEntityModel(entity)
     local hashStr = tostring(hash)
     local entityType = GetEntityType(entity)
-    
+    local distance = #(coords - GetEntityCoords(PlayerPedId()))
+
     local entityTypeStr = "Unknown"
-    if entityType == 1 then entityTypeStr = "Ped"
-    elseif entityType == 2 then entityTypeStr = "Vehicle"
-    elseif entityType == 3 then entityTypeStr = "Object" end
-    
+    if entityType == 1 then
+        entityTypeStr = "Ped"
+    elseif entityType == 2 then
+        entityTypeStr = "Vehicle"
+    elseif entityType == 3 then
+        entityTypeStr = "Object"
+    end
+
     local networkId = 'N/A'
     if NetworkGetEntityIsNetworked(entity) then
         networkId = NetworkGetNetworkIdFromEntity(entity)
     end
-    
+
     return {
         entity = entity,
         hash = hash,
@@ -39,6 +44,7 @@ local function GetEntityInfo(entity)
         coords = coords,
         rotation = rotation,
         heading = heading,
+        distance = distance,
         type = entityTypeStr,
         networkId = networkId
     }
@@ -47,9 +53,9 @@ end
 ---@param entity number The entity handle
 local function UpdateEntityInfo(entity)
     if not entity or not DoesEntityExist(entity) then return end
-    
+
     lastEntityInfo = GetEntityInfo(entity)
-    
+
     SendNUIMessage({
         type = 'updateInfo',
         info = lastEntityInfo
@@ -58,11 +64,11 @@ end
 
 ---@param format string Format to copy ('model', 'coords', 'rotation', 'heading', 'all')
 local function CopyInfo(format)
-    if not lastEntityInfo then 
+    if not lastEntityInfo then
         Notify("No entity information available", "error", 3000)
-        return 
+        return
     end
-    
+
     SendNUIMessage({
         type = 'copyFormat',
         format = format,
@@ -101,13 +107,13 @@ local function RotationToDirection(rotation)
         y = (math.pi / 180) * rotation.y,
         z = (math.pi / 180) * rotation.z
     }
-    
+
     local direction = {
         x = -math.sin(adjustedRotation.z) * math.abs(math.cos(adjustedRotation.x)),
         y = math.cos(adjustedRotation.z) * math.abs(math.cos(adjustedRotation.x)),
         z = math.sin(adjustedRotation.x)
     }
-    
+
     return vector3(direction.x, direction.y, direction.z)
 end
 
@@ -122,7 +128,7 @@ local function RaycastCamera(distance)
         y = cameraCoord.y + direction.y * distance,
         z = cameraCoord.z + direction.z * distance
     }
-    
+
     local _, hit, endCoords, _, entityHit = GetShapeTestResult(
         StartShapeTestRay(
             cameraCoord.x, cameraCoord.y, cameraCoord.z,
@@ -130,7 +136,7 @@ local function RaycastCamera(distance)
             -1, PlayerPedId(), 0
         )
     )
-    
+
     return hit, endCoords, entityHit
 end
 
@@ -139,22 +145,22 @@ local function StopPropInfoMode()
     isActive = false
     displayInfo = false
     targetEntity = nil
-    
+
     SendNUIMessage({
         type = 'showUI',
         show = false
     })
-    
+
     SendNUIMessage({
         type = 'showNoEntity',
         show = false
     })
-    
+
     SendNUIMessage({
         type = 'updateInfo',
         info = nil
     })
-    
+
     Notify("Entity Info Mode deactivated", "error", Config.Notifications.duration.standard)
 end
 
@@ -162,45 +168,45 @@ end
 local function StartPropInfoMode()
     isActive = true
     displayInfo = true
-    
+
     SendNUIMessage({
         type = 'showUI',
         show = true
     })
-    
+
     Notify("Entity Info Mode activated", "success", Config.Notifications.duration.standard)
-    
+
     CreateThread(function()
         while isActive do
             Wait(0)
-            
+
             local playerPed = PlayerPedId()
-            
+
             local hit, endCoords, entityHit = RaycastCamera(Config.Raycast.maxDistance)
-                
+
             if hit == 1 and DoesEntityExist(entityHit) then
                 targetEntity = entityHit
-                
+
                 local playerPos = GetEntityCoords(playerPed)
-                
+
                 if Config.Raycast.drawLine then
                     DrawLine(
                         playerPos.x, playerPos.y, playerPos.z,
                         endCoords.x, endCoords.y, endCoords.z,
-                        Config.Raycast.lineColor[1], Config.Raycast.lineColor[2], 
+                        Config.Raycast.lineColor[1], Config.Raycast.lineColor[2],
                         Config.Raycast.lineColor[3], Config.Raycast.lineColor[4]
                     )
                 end
-                
+
                 if Config.Raycast.drawMarker then
-                    DrawMarker(0x50638AB9, endCoords.x, endCoords.y, endCoords.z, 
-                              0.0, 0.0, 0.0, 0.0, 180.0, 0.0, 
-                              Config.Raycast.markerSize, Config.Raycast.markerSize, Config.Raycast.markerSize, 
-                              Config.Raycast.markerColor[1], Config.Raycast.markerColor[2], 
-                              Config.Raycast.markerColor[3], Config.Raycast.markerColor[4], 
-                              false, false, 2, false, nil, nil, false)
+                    DrawMarker(0x50638AB9, endCoords.x, endCoords.y, endCoords.z,
+                        0.0, 0.0, 0.0, 0.0, 180.0, 0.0,
+                        Config.Raycast.markerSize, Config.Raycast.markerSize, Config.Raycast.markerSize,
+                        Config.Raycast.markerColor[1], Config.Raycast.markerColor[2],
+                        Config.Raycast.markerColor[3], Config.Raycast.markerColor[4],
+                        false, false, 2, false, nil, nil, false)
                 end
-                
+
                 if displayInfo then
                     UpdateEntityInfo(entityHit)
                     SendNUIMessage({
@@ -208,12 +214,12 @@ local function StartPropInfoMode()
                         show = true
                     })
                 end
-                
+
                 SendNUIMessage({
                     type = 'showNoEntity',
                     show = false
                 })
-                
+
                 if IsControlJustReleased(0, Config.Keys.copyModel) then
                     CopyInfo('model')
                 elseif IsControlJustReleased(0, Config.Keys.copyCoords) then
@@ -230,14 +236,15 @@ local function StartPropInfoMode()
                         type = 'showUI',
                         show = displayInfo
                     })
-                    Notify("Info display: " .. (displayInfo and "ON" or "OFF"), "primary", Config.Notifications.duration.short)
+                    Notify("Info display: " .. (displayInfo and "ON" or "OFF"), "primary",
+                        Config.Notifications.duration.short)
                 end
             else
                 SendNUIMessage({
                     type = 'showNoEntity',
                     show = true
                 })
-                
+
                 if targetEntity then
                     targetEntity = nil
                     SendNUIMessage({
@@ -256,5 +263,49 @@ RegisterCommand(Config.Commands.main, function()
     else
         StartPropInfoMode()
     end
-end, true)
-TriggerEvent("chat:addSuggestion", "/"..Config.Commands.main, "Toggle display of entity information", {})
+end, false)
+TriggerEvent("chat:addSuggestion", "/" .. Config.Commands.main, "Toggle display of entity information", {})
+
+
+RegisterCommand("nearbyfish", function()
+    local playerPed = PlayerPedId()
+    local playerCoords = GetEntityCoords(playerPed)
+    local radius = 30.0
+    local foundFish = {}
+
+    local knownFishModels = {
+        [GetHashKey("A_C_FishBluegil_01_MS")] = "A_C_FishBluegil_01_MS",
+        [GetHashKey("A_C_FishBluegil_01_SM")] = "A_C_FishBluegil_01_SM",
+        [GetHashKey("A_C_FishBullheadCat_01_MS")] = "A_C_FishBullheadCat_01_MS",
+        [GetHashKey("A_C_FishBullheadCat_01_SM")] = "A_C_FishBullheadCat_01_SM",
+        [GetHashKey("A_C_FishChainPickerel_01_MS")] = "A_C_FishChainPickerel_01_MS",
+        [GetHashKey("A_C_FishChannelCatfish_01_LG")] = "A_C_FishChannelCatfish_01_LG",
+        [GetHashKey("A_C_FishLakeSturgeon_01_LG")] = "A_C_FishLakeSturgeon_01_LG",
+        [GetHashKey("A_C_FishLargemouthBass_01_LG")] = "A_C_FishLargemouthBass_01_LG",
+        [GetHashKey("A_C_FishLongnoseGar_01_LG")] = "A_C_FishLongnoseGar_01_LG",
+        [GetHashKey("A_C_FishMuskie_01_LG")] = "A_C_FishMuskie_01_LG",
+        [GetHashKey("A_C_FishNorthernPike_01_LG")] = "A_C_FishNorthernPike_01_LG",
+        [GetHashKey("A_C_FishPerch_01_SM")] = "A_C_FishPerch_01_SM",
+        [GetHashKey("A_C_FishRainbowTrout_01_MS")] = "A_C_FishRainbowTrout_01_MS",
+        [GetHashKey("A_C_FishRedfinPickerel_01_SM")] = "A_C_FishRedfinPickerel_01_SM",
+        [GetHashKey("A_C_FishRockBass_01_SM")] = "A_C_FishRockBass_01_SM",
+        [GetHashKey("A_C_FishSalmonSockeye_01_LG")] = "A_C_FishSalmonSockeye_01_LG",
+        [GetHashKey("A_C_FishSmallmouthBass_01_MS")] = "A_C_FishSmallmouthBass_01_MS",
+    }
+
+    for _, ped in ipairs(GetGamePool("CPed")) do
+        local model = GetEntityModel(ped)
+        local dist = #(playerCoords - GetEntityCoords(ped))
+
+        if dist < radius and knownFishModels[model] and not foundFish[model] then
+            foundFish[model] = true
+            print("[Fish Nearby] " .. knownFishModels[model])
+        end
+    end
+
+    if next(foundFish) == nil then
+        print("No fish nearby.")
+    else
+        print(("Found %d unique fish types nearby."):format(#(json.encode(foundFish))))
+    end
+end, false)
